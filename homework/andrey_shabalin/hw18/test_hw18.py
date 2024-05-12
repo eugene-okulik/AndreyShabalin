@@ -6,6 +6,8 @@ from dateutil import parser
 import pytz
 import pytest
 
+# pytest -s -v homework/andrey_shabalin/hw18
+
 base_url = "https://api.restful-api.dev"
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
