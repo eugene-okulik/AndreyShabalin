@@ -147,7 +147,7 @@ def test_update_all_object(create_object):
            and result_body["name"] == test_body["name"] \
            and result_body["data"] == test_body["data"] \
            and is_within_one_minute(result_body['updatedAt']), \
-        logging.error("Запись обновилась не корректно")
+           logging.error("Запись обновилась не корректно")
     return result_body['id']
 
 
@@ -172,7 +172,7 @@ def test_update_partially_object(create_object):
     assert result_body['id'] == test_id \
            and result_body['name'] == test_body['name'] \
            and is_within_one_minute(result_body['updatedAt']), \
-        logging.error("Запись обновилась не корректно")
+           logging.error("Запись обновилась не корректно")
 
 
 def test_delete_object_by_id(create_object):
