@@ -155,8 +155,8 @@ def test_update_all_object(create_object):
     result = requests.put(f"{base_url}/objects/{test_id}", json=updated_test_body)
     assert result.status_code == 200, logging.error(f"Статус код равен {result.status_code}")
     result_body = result.json()
-    assert result_body['id'] == test_id \
-            assert result_body["name"] == updated_test_body["name"], logging.error("Имена записей не совпадают")
+    assert result_body['id'] == test_id, logging.error("ID записей не совпадают")
+    assert result_body["name"] == updated_test_body["name"], logging.error("Имена записей не совпадают")
     assert result_body["data"] == updated_test_body["data"], logging.error("Данные записей не совпадают")
     assert is_within_one_minute(result_body['updatedAt']), logging.error(
         "Время записей не совпадает или имеет разницу больше минуты")
