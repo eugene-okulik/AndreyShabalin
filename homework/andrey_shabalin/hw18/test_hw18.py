@@ -156,10 +156,10 @@ def test_update_all_object(create_object):
     assert result.status_code == 200, logging.error(f"Статус код равен {result.status_code}")
     result_body = result.json()
     assert result_body['id'] == test_id \
-           and result_body["name"] == updated_test_body["name"] \
-           and result_body["data"] == updated_test_body["data"] \
-           and is_within_one_minute(result_body['updatedAt']), \
-        logging.error("Запись обновилась не корректно")
+            assert result_body["name"] == updated_test_body["name"], logging.error("Имена записей не совпадают")
+    assert result_body["data"] == updated_test_body["data"], logging.error("Данные записей не совпадают")
+    assert is_within_one_minute(result_body['updatedAt']), logging.error(
+        "Время записей не совпадает или имеет разницу больше минуты")
 
 
 def test_update_partially_object(create_object):
