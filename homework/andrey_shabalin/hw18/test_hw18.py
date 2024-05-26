@@ -14,6 +14,62 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 data = None
 
+test_body = {
+    "name": "Apple MacBook Pro 19",
+    "data": {
+        "year": 2019,
+        "price": 1849.99,
+        "CPU model": "Intel Core i9",
+        "Hard disk size": "1 TB"
+    }
+}
+
+test_body_2 = {
+    "name": "LG TV PC CONSOLE 4 in 1",
+    "data": {
+        "year": 2019,
+        "price": 1849.99,
+        "CPU model": "Intel Core i9",
+        "Hard disk size": "1 TB"
+    }
+}
+
+test_body_3 = {
+    "name": "Lenovo ThinkPad",
+    "data": {
+        "year": 2019,
+        "price": 1849.99,
+        "CPU model": "Intel Core i9",
+        "Hard disk size": "1 TB"
+    }
+}
+
+test_bodies = [test_body, test_body_2, test_body_3]
+
+
+@pytest.fixture(scope="package", autouse=True)
+def module_fixture():
+    print("\nStart testing\n")
+    yield
+    print("Testing completed\n")
+
+
+@pytest.fixture(scope="module")
+def create_object():
+    return add_object(test_body)
+
+
+@pytest.fixture(scope="function", autouse=True)
+def function_fixture():
+    print("\nbefore test\n")
+    yield
+    print("\nafter test")
+
+
+def add_object(created_body):
+    result = requests.post(f"{base_url}/objects", json=created_body)
+    return result
+
 
 def is_within_one_minute(date_str):
     # Парсинг строки даты в объект datetime с временной зоной
@@ -36,12 +92,6 @@ def is_within_one_minute(date_str):
 def test_get_all_objects():
     """
     Получаем все объекты
-    :return: json со всеми объектами, каждый из которых содержит:
-    id    - id объекта
-    name  - Наименование объекта
-    data  - Вложенный json, который содержит:
-    color - Цвет объекта
-    capacity GB - Размер памяти объекта
     """
     result = requests.get(f"{base_url}/objects")
     assert result.status_code == 200, logging.error(f"Статус код равен {result.status_code}")
@@ -53,12 +103,6 @@ def test_get_all_objects():
 def test_get_objects_by_id():
     """
     Получаем объекты по их id-шникам
-    :return: json с объектами, каждый из которых содержит:
-    id    - id объекта
-    name  - Наименование объекта
-    data  - Вложенный json, который содержит:
-    color - Цвет объекта
-    capacity GB - Размер памяти объекта
     """
     test_ids = ["1", "3"]
     result = requests.get(f"{base_url}/objects?id={test_ids[0]}&id={test_ids[1]}")
@@ -68,17 +112,11 @@ def test_get_objects_by_id():
         logging.error("Получили неверную запись, либо их порядок не соответствует требованиям")
 
 
-def test_get_object_by_id():
+def test_get_object_by_id(create_object):
     """
     Получаем один объект по его id-шнику
-    :return: json с объектом, каждый из которых содержит:
-    id    - id объекта
-    name  - Наименование объекта
-    data  - Вложенный json, который содержит:
-    color - Цвет объекта
-    capacity GB - Размер памяти объекта
     """
-    test_id = "1"
+    test_id = create_object.json()["id"]
     result = requests.get(f"{base_url}/objects/{test_id}")
     assert result.status_code == 200, logging.error(f"Статус код равен {result.status_code}")
     result_body = result.json()
@@ -86,52 +124,26 @@ def test_get_object_by_id():
         logging.error("Получили неверную запись")
 
 
-def test_add_object():
+@pytest.mark.critical
+@pytest.mark.parametrize("test_body", test_bodies)
+def test_add_object(test_body):
     """
     Создаём один объект
-    :body: json с информацией об объекту (аналогичной как в return, только без id)
-    :return: json с объектом, каждый из которых содержит:
-    id    - id объекта
-    name  - Наименование объекта
-    data  - Вложенный json, который содержит:
-    color - Цвет объекта
-    capacity GB - Размер памяти объекта
     """
-    test_body = {
-        "name": "Apple MacBook Pro 19",
-        "data": {
-            "year": 2019,
-            "price": 1849.99,
-            "CPU model": "Intel Core i9",
-            "Hard disk size": "1 TB"
-        }
-    }
-    result = requests.post(f"{base_url}/objects", json=test_body)
+    result = add_object(test_body)
     assert result.status_code == 200, logging.error(f"Статус код равен {result.status_code}")
     result_body = result.json()
     assert result_body['id'] is not None and is_within_one_minute(result_body['createdAt']), \
         logging.error("Запись создалась не корректно")
-    return result_body['id']
 
 
-@pytest.fixture(scope="module")
-def create_object():
-    return test_add_object()
-
-
+@pytest.mark.medium
 def test_update_all_object(create_object):
     """
     Обновляем один объект
-    :body: json с информацией об объекту (аналогичной как в return, только без id)
-    :return: json с объектом, каждый из которых содержит:
-    id    - id объекта
-    name  - Наименование объекта
-    data  - Вложенный json, который содержит:
-    color - Цвет объекта
-    capacity GB - Размер памяти объекта
     """
-    test_id = create_object
-    test_body = {
+    test_id = create_object.json()["id"]
+    updated_test_body = {
         "name": "Samsung MacBook Pro 19",
         "data": {
             "year": 3019,
@@ -140,47 +152,38 @@ def test_update_all_object(create_object):
             "Hard disk size": "3 TB"
         }
     }
-    result = requests.put(f"{base_url}/objects/{test_id}", json=test_body)
+    result = requests.put(f"{base_url}/objects/{test_id}", json=updated_test_body)
     assert result.status_code == 200, logging.error(f"Статус код равен {result.status_code}")
     result_body = result.json()
     assert result_body['id'] == test_id \
-           and result_body["name"] == test_body["name"] \
-           and result_body["data"] == test_body["data"] \
+           and result_body["name"] == updated_test_body["name"] \
+           and result_body["data"] == updated_test_body["data"] \
            and is_within_one_minute(result_body['updatedAt']), \
-           logging.error("Запись обновилась не корректно")
-    return result_body['id']
+        logging.error("Запись обновилась не корректно")
 
 
 def test_update_partially_object(create_object):
     """
     Частично обновляем один объект
-    :body: json с информацией об объекту (аналогичной как в return, только без id)
-    :return: json с объектом, каждый из которых содержит:
-    id    - id объекта
-    name  - Наименование объекта
-    data  - Вложенный json, который содержит:
-    color - Цвет объекта
-    capacity GB - Размер памяти объекта
     """
-    test_id = create_object
+    test_id = create_object.json()["id"]
     test_body = {
         "name": "Xiaomi MacBook Pro 19"
     }
     result = requests.patch(f"{base_url}/objects/{test_id}", json=test_body)
     assert result.status_code == 200, logging.error(f"Статус код равен {result.status_code}")
     result_body = result.json()
-    assert result_body['id'] == test_id \
-           and result_body['name'] == test_body['name'] \
-           and is_within_one_minute(result_body['updatedAt']), \
-           logging.error("Запись обновилась не корректно")
+    assert result_body['id'] == test_id, logging.error("ID записей не совпадают")
+    assert result_body['name'] == test_body['name'], logging.error("Name записей не совпадают")
+    assert is_within_one_minute(result_body['updatedAt']), logging.error("Время записей не совпадает или отличается "
+                                                                         "больше чем на минуту")
 
 
 def test_delete_object_by_id(create_object):
     """
     Удаляем один объект по его id-шнику
-    :return: сообщение об успешном удалении объекта
     """
-    test_id = create_object
+    test_id = create_object.json()["id"]
     result = requests.delete(f"{base_url}/objects/{test_id}")
     assert result.status_code == 200, logging.error(f"Статус код равен {result.status_code}")
     result_body = result.json()
